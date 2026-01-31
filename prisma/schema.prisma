@@ -1,0 +1,203 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Admin users (for NextAuth)
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  password      String
+  image         String?
+  role          String    @default("admin")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// Core booking models
+model Service {
+  id          String   @id @default(cuid())
+  name        String   @unique // e.g., "Studio Photography", "Event Coverage"
+  slug        String   @unique
+  category    String // "photography", "design", "print", "events"
+  description String   @db.Text
+  basePrice   Float // Base price in ZAR
+  duration    Int // Duration in minutes
+  image       String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  bookings Booking[]
+  addOns   ServiceAddOn[]
+
+  @@map("services")
+}
+
+model AddOn {
+  id          String   @id @default(cuid())
+  name        String   @unique // e.g., "Extra Hour", "Rush Delivery", "10 Prints"
+  description String?
+  price       Float // Additional price in ZAR
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  services ServiceAddOn[]
+  bookings BookingAddOn[]
+
+  @@map("add_ons")
+}
+
+// Join table for services and add-ons
+model ServiceAddOn {
+  id        String  @id @default(cuid())
+  serviceId String
+  addOnId   String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  addOn     AddOn   @relation(fields: [addOnId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, addOnId])
+  @@map("service_add_ons")
+}
+
+model Booking {
+  id            String @id @default(cuid())
+  bookingNumber String @unique // e.g., "BK-2026-0001"
+
+  // Service details
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id])
+
+  // Date & Time
+  bookingDate DateTime // The date of the shoot/service
+  startTime   String // e.g., "09:00"
+  endTime     String // e.g., "12:00"
+
+  // Client details
+  clientName  String
+  clientEmail String
+  clientPhone String
+  clientNotes String? @db.Text
+
+  // Status
+  status BookingStatus @default(PENDING)
+
+  // Admin notes
+  adminNotes String? @db.Text
+
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  confirmedAt DateTime?
+  completedAt DateTime?
+  cancelledAt DateTime?
+
+  addOns BookingAddOn[]
+
+  @@index([bookingDate])
+  @@index([status])
+  @@map("bookings")
+}
+
+enum BookingStatus {
+  PENDING // Newly submitted
+  CONFIRMED // Admin approved
+  COMPLETED // Service delivered
+  CANCELLED // Cancelled by client or admin
+}
+
+// Join table for bookings and add-ons
+model BookingAddOn {
+  id        String  @id @default(cuid())
+  bookingId String
+  addOnId   String
+  quantity  Int     @default(1)
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  addOn     AddOn   @relation(fields: [addOnId], references: [id], onDelete: Cascade)
+
+  @@unique([bookingId, addOnId])
+  @@map("booking_add_ons")
+}
+
+// Blocked dates (admin sets unavailable dates)
+model BlockedDate {
+  id        String   @id @default(cuid())
+  date      DateTime @unique @db.Date
+  reason    String? // e.g., "Public Holiday", "Fully Booked"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("blocked_dates")
+}
+
+// Portfolio / Gallery images
+model PortfolioImage {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String
+  category    String // "photography", "design", "print", "events"
+  isFeatured  Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([isFeatured])
+  @@map("portfolio_images")
+}
