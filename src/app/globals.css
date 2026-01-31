@@ -1,26 +1,61 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 @layer base {
-  * {
-    @apply border-border;
+  :root {
+    --color-proimages-orange: #FF6B35;
+    --color-proimages-dark: #1A1A1A;
+    --color-proimages-gray: #2D2D2D;
   }
+  
   body {
-    @apply bg-proimages-dark text-white antialiased;
+    background-color: var(--color-proimages-dark);
+    color: white;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-proimages-orange hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-200;
+    background-color: var(--color-proimages-orange);
+    color: white;
+    font-weight: bold;
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+    transition: background-color 200ms;
+  }
+  
+  .btn-primary:hover {
+    background-color: #ea5a2a;
   }
   
   .btn-secondary {
-    @apply border-2 border-proimages-orange text-proimages-orange hover:bg-proimages-orange hover:text-white font-bold py-3 px-8 rounded-lg transition-all duration-200;
+    border: 2px solid var(--color-proimages-orange);
+    color: var(--color-proimages-orange);
+    font-weight: bold;
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+    transition: all 200ms;
+  }
+  
+  .btn-secondary:hover {
+    background-color: var(--color-proimages-orange);
+    color: white;
   }
   
   .section-container {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16;
+    max-width: 80rem;
+    margin: 0 auto;
+    padding: 4rem 1rem;
+  }
+  
+  @media (min-width: 640px) {
+    .section-container {
+      padding: 4rem 1.5rem;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .section-container {
+      padding: 4rem 2rem;
+    }
   }
 }

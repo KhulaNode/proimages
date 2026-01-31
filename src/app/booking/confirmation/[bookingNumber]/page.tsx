@@ -2,13 +2,17 @@ import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { formatDate, formatTime } from "@/lib/utils";
 
+export const dynamic = 'force-dynamic';
+
 export default async function BookingConfirmationPage({
   params,
 }: {
-  params: { bookingNumber: string };
+  params: Promise<{ bookingNumber: string }>;
 }) {
+  const { bookingNumber } = await params;
+  
   const booking = await prisma.booking.findUnique({
-    where: { bookingNumber: params.bookingNumber },
+    where: { bookingNumber },
     include: { service: true },
   });
 
